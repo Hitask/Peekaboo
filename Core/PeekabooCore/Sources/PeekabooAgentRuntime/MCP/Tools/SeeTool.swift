@@ -145,7 +145,7 @@ public struct SeeTool: MCPTool {
 
         Returns Peekaboo element IDs (B1 for buttons, T1 for text fields, etc.) that can be
         used with interaction commands and creates/updates a snapshot that tracks UI state.
-        Peekaboo MCP 3.0.0-beta4 using openai/gpt-5.1
+        \(PeekabooMCPVersion.banner) using openai/gpt-5.1
         and anthropic/claude-sonnet-4.5.
         """
     }
@@ -381,15 +381,15 @@ public struct SeeTool: MCPTool {
                 title: element.label,
                 label: element.label,
                 value: element.value,
-                description: nil,
-                help: nil,
-                roleDescription: nil,
-                identifier: nil,
+                description: element.attributes["description"],
+                help: element.attributes["help"],
+                roleDescription: element.attributes["roleDescription"],
+                identifier: element.attributes["identifier"],
                 frame: element.bounds,
                 isActionable: element.isEnabled,
                 parentId: nil,
                 children: [],
-                keyboardShortcut: nil)
+                keyboardShortcut: element.attributes["keyboardShortcut"])
         }
     }
 
@@ -572,18 +572,42 @@ private struct SeeSummaryBuilder {
     }
 
     private func describeElement(_ element: UIElement) -> String {
+        SeeElementTextFormatter.describe(element)
+    }
+}
+
+struct SeeElementTextFormatter {
+    static func describe(_ element: UIElement) -> String {
         var parts = ["  \(element.id)"]
         if let label = self.primaryLabel(for: element) {
             parts.append("\"\(label)\"")
         }
-        parts.append("at (\(Int(element.frame.origin.x)), \(Int(element.frame.origin.y)))")
+        let sizeText = "size \(Int(element.frame.width))×\(Int(element.frame.height))"
+        parts
+            .append(
+                "at (\(Int(element.frame.origin.x)), \(Int(element.frame.origin.y))) \(sizeText)")
+        if let value = element.value, element.title != nil || element.label != nil {
+            parts.append("value: \"\(value)\"")
+        }
+        if let desc = element.description, !desc.isEmpty {
+            parts.append("desc: \"\(desc)\"")
+        }
+        if let help = element.help, !help.isEmpty {
+            parts.append("help: \"\(help)\"")
+        }
+        if let shortcut = element.keyboardShortcut, !shortcut.isEmpty {
+            parts.append("shortcut: \(shortcut)")
+        }
+        if let identifier = element.identifier, !identifier.isEmpty {
+            parts.append("identifier: \(identifier)")
+        }
         if !element.isActionable {
             parts.append("[not actionable]")
         }
         return parts.joined(separator: " - ")
     }
 
-    private func primaryLabel(for element: UIElement) -> String? {
+    static func primaryLabel(for element: UIElement) -> String? {
         if let title = element.title { return title }
         if let label = element.label { return label }
         if let value = element.value { return "value: \(value)" }

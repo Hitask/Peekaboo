@@ -30,19 +30,19 @@ read_when:
 ## Examples
 ```bash
 # Launch Xcode with a project and keep it backgrounded
-polter peekaboo -- app launch "Xcode" --open ~/Projects/Peekaboo.xcodeproj --no-focus
+peekaboo app launch "Xcode" --open ~/Projects/Peekaboo.xcodeproj --no-focus
 
 # Quit everything but Finder and Terminal
-polter peekaboo -- app quit --all --except "Finder,Terminal"
+peekaboo app quit --all --except "Finder,Terminal"
 
 # Cycle to the next app exactly once
-polter peekaboo -- app switch --cycle
+peekaboo app switch --cycle
 
 # Switch and verify the app is frontmost
-polter peekaboo -- app switch --to Safari --verify
+peekaboo app switch --to Safari --verify
 ```
 
 ## Troubleshooting
 - Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
 - Confirm your target (app/window/selector) with `peekaboo list`/`peekaboo see` before rerunning.
-- Re-run with `--json-output` or `--verbose` to surface detailed errors.
+- Re-run with `--json` or `--verbose` to surface detailed errors.

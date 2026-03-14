@@ -31,17 +31,17 @@ read_when:
 ## Examples
 ```bash
 # Click the "Send" button (ID from a previous `see` run)
-polter peekaboo -- click --on B12
+peekaboo click --on B12
 
 # Fuzzy search + extra wait for a slow dialog
-polter peekaboo -- click "Allow" --wait-for 8000 --space-switch
+peekaboo click "Allow" --wait-for 8000 --space-switch
 
 # Issue a right-click at raw coordinates
-polter peekaboo -- click --coords 1024,88 --right --no-auto-focus
+peekaboo click --coords 1024,88 --right --no-auto-focus
 ```
 
 ## Troubleshooting
 - Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
 - Confirm your target (app/window/selector) with `peekaboo list`/`peekaboo see` before rerunning.
 - If you see `SNAPSHOT_NOT_FOUND`, regenerate the snapshot with `peekaboo see` (or omit `--snapshot` to use the most recent one). Cleaned/expired snapshots cannot be reused.
-- Re-run with `--json-output` or `--verbose` to surface detailed errors.
+- Re-run with `--json` or `--verbose` to surface detailed errors.

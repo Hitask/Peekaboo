@@ -21,7 +21,7 @@ public struct MoveTool: MCPTool {
         Move the mouse cursor to a specific position or UI element.
         Supports absolute coordinates, UI element targeting, or centering on screen.
         Can animate movement smoothly over a specified duration.
-        Peekaboo MCP 3.0.0-beta4 using openai/gpt-5.1, anthropic/claude-sonnet-4.5
+        \(PeekabooMCPVersion.banner) using openai/gpt-5.1, anthropic/claude-sonnet-4.5
         """
     }
 
@@ -370,5 +370,7 @@ private struct MovementExecution {
 
 private struct MoveToolValidationError: Error {
     let message: String
-    init(_ message: String) { self.message = message }
+    init(_ message: String) {
+        self.message = message
+    }
 }

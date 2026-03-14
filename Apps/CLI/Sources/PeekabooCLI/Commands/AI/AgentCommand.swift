@@ -20,7 +20,7 @@ struct AgentSessionInfo: Codable {
     let messageCount: Int
 }
 
-// Simple debug logging check
+/// Simple debug logging check
 private var isDebugLoggingEnabled: Bool {
     // Check if verbose mode is enabled via log level
     if let logLevel = ProcessInfo.processInfo.environment["PEEKABOO_LOG_LEVEL"]?.lowercased() {
@@ -150,7 +150,13 @@ struct AgentCommand: RuntimeOptionsConfigurable {
     }
 
     @RuntimeStorage private var runtime: CommandRuntime?
-    var runtimeOptions = CommandRuntimeOptions()
+    var runtimeOptions: CommandRuntimeOptions = {
+        var options = CommandRuntimeOptions()
+        // Remote GUI bridge mode is optional and can fail to expose auth state.
+        // Keep agent execution local by default unless an explicit runtime option overrides it.
+        options.preferRemote = false
+        return options
+    }()
 
     private var resolvedRuntime: CommandRuntime {
         guard let runtime else {
@@ -168,9 +174,13 @@ struct AgentCommand: RuntimeOptionsConfigurable {
         self.resolvedRuntime.logger
     }
 
-    var jsonOutput: Bool { self.runtime?.configuration.jsonOutput ?? self.runtimeOptions.jsonOutput }
+    var jsonOutput: Bool {
+        self.runtime?.configuration.jsonOutput ?? self.runtimeOptions.jsonOutput
+    }
 
-    var verbose: Bool { self.runtime?.configuration.verbose ?? self.runtimeOptions.verbose }
+    var verbose: Bool {
+        self.runtime?.configuration.verbose ?? self.runtimeOptions.verbose
+    }
 }
 
 @MainActor
@@ -192,7 +202,9 @@ private final class TerminalModeGuard {
         self.active = true
     }
 
-    var fileDescriptor: Int32 { self.fd }
+    var fileDescriptor: Int32 {
+        self.fd
+    }
 
     func restore() {
         guard self.active else { return }
@@ -255,7 +267,7 @@ final class EscapeKeyMonitor {
 extension AgentCommand {
     @MainActor
     mutating func run() async throws {
-        let runtime = await CommandRuntime.makeDefaultAsync()
+        let runtime = await CommandRuntime.makeDefaultAsync(options: self.runtimeOptions)
         try await self.run(using: runtime)
     }
 
@@ -782,7 +794,9 @@ extension AgentCommand {
         self.normalizedTaskInput != nil || self.audio || self.audioFile != nil
     }
 
-    var resolvedMaxSteps: Int { self.maxSteps ?? 100 }
+    var resolvedMaxSteps: Int {
+        self.maxSteps ?? 100
+    }
 
     private func resolvedQueueMode() throws -> QueueMode {
         guard let raw = self.queueMode?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {

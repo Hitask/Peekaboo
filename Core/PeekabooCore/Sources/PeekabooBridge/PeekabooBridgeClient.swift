@@ -152,13 +152,14 @@ public actor PeekabooBridgeClient {
     public func detectElements(
         in imageData: Data,
         snapshotId: String?,
-        windowContext: WindowContext?) async throws -> ElementDetectionResult
+        windowContext: WindowContext?,
+        requestTimeoutSec: TimeInterval? = nil) async throws -> ElementDetectionResult
     {
         let payload = PeekabooBridgeDetectElementsRequest(
             imageData: imageData,
             snapshotId: snapshotId,
             windowContext: windowContext)
-        let response = try await self.send(.detectElements(payload))
+        let response = try await self.send(.detectElements(payload), timeoutSec: requestTimeoutSec)
         switch response {
         case let .elementDetection(result):
             return result
@@ -226,26 +227,9 @@ public actor PeekabooBridgeClient {
         try await self.sendExpectOK(.swipe(payload))
     }
 
-    // swiftlint:disable function_parameter_count
-    public func drag(
-        from: CGPoint,
-        to: CGPoint,
-        duration: Int,
-        steps: Int,
-        modifiers: String?,
-        profile: MouseMovementProfile) async throws
-    {
-        let payload = PeekabooBridgeDragRequest(
-            from: from,
-            to: to,
-            duration: duration,
-            steps: steps,
-            modifiers: modifiers,
-            profile: profile)
-        try await self.sendExpectOK(.drag(payload))
+    public func drag(_ request: PeekabooBridgeDragRequest) async throws {
+        try await self.sendExpectOK(.drag(request))
     }
-
-    // swiftlint:enable function_parameter_count
 
     public func moveMouse(
         to point: CGPoint,
@@ -422,7 +406,9 @@ public actor PeekabooBridgeClient {
     public func showAllApplications() async throws {
         try await self.sendExpectOK(.showAllApplications)
     }
+}
 
+extension PeekabooBridgeClient {
     // MARK: - Menus
 
     public func listMenus(appIdentifier: String) async throws -> MenuStructure {
@@ -527,8 +513,14 @@ public actor PeekabooBridgeClient {
             menuItem: menuItem)))
     }
 
-    public func hideDock() async throws { try await self.sendExpectOK(.hideDock) }
-    public func showDock() async throws { try await self.sendExpectOK(.showDock) }
+    public func hideDock() async throws {
+        try await self.sendExpectOK(.hideDock)
+    }
+
+    public func showDock() async throws {
+        try await self.sendExpectOK(.showDock)
+    }
+
     public func isDockHidden() async throws -> Bool {
         let response = try await self.send(.isDockHidden)
         switch response {
@@ -668,26 +660,8 @@ public actor PeekabooBridgeClient {
         }
     }
 
-    // swiftlint:disable:next function_parameter_count
-    public func storeScreenshot(
-        snapshotId: String,
-        screenshotPath: String,
-        applicationBundleId: String?,
-        applicationProcessId: Int32?,
-        applicationName: String?,
-        windowTitle: String?,
-        windowBounds: CGRect?) async throws
-    {
-        try await self.sendExpectOK(
-            .storeScreenshot(
-                .init(
-                    snapshotId: snapshotId,
-                    screenshotPath: screenshotPath,
-                    applicationBundleId: applicationBundleId,
-                    applicationProcessId: applicationProcessId,
-                    applicationName: applicationName,
-                    windowTitle: windowTitle,
-                    windowBounds: windowBounds)))
+    public func storeScreenshot(_ request: PeekabooBridgeStoreScreenshotRequest) async throws {
+        try await self.sendExpectOK(.storeScreenshot(request))
     }
 
     public func storeAnnotatedScreenshot(snapshotId: String, annotatedScreenshotPath: String) async throws {
@@ -748,17 +722,23 @@ public actor PeekabooBridgeClient {
     public func appleScriptProbe() async throws {
         try await self.sendExpectOK(.appleScriptProbe)
     }
+}
 
+extension PeekabooBridgeClient {
     // MARK: - Private
 
-    private func send(_ request: PeekabooBridgeRequest) async throws -> PeekabooBridgeResponse {
+    private func send(
+        _ request: PeekabooBridgeRequest,
+        timeoutSec: TimeInterval? = nil) async throws -> PeekabooBridgeResponse
+    {
         let payload = try self.encoder.encode(request)
         let op = request.operation
         let start = Date()
         self.logger.debug("Sending bridge request \(op.rawValue, privacy: .public)")
 
+        let effectiveTimeoutSec = timeoutSec ?? self.requestTimeoutSec
         let (socketPath, maxResponseBytes, requestTimeoutSec) =
-            (self.socketPath, self.maxResponseBytes, self.requestTimeoutSec)
+            (self.socketPath, self.maxResponseBytes, effectiveTimeoutSec)
         let responseData = try await Task.detached(priority: .userInitiated) {
             try Self.sendBlocking(
                 socketPath: socketPath,

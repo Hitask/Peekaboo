@@ -25,16 +25,16 @@ read_when:
 ## Examples
 ```bash
 # Show every Space plus its assigned windows
-polter peekaboo -- space list --detailed
+peekaboo space list --detailed
 
 # Move the frontmost Safari window to Space 3 and follow it
-polter peekaboo -- space move-window --app Safari --to 3 --follow
+peekaboo space move-window --app Safari --to 3 --follow
 
 # Switch back to Space 1
-polter peekaboo -- space switch --to 1
+peekaboo space switch --to 1
 ```
 
 ## Troubleshooting
 - Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
 - Confirm your target (app/window/selector) with `peekaboo list`/`peekaboo see` before rerunning.
-- Re-run with `--json-output` or `--verbose` to surface detailed errors.
+- Re-run with `--json` or `--verbose` to surface detailed errors.

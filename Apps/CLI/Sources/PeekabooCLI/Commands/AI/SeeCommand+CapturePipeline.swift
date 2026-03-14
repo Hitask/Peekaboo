@@ -17,17 +17,55 @@ extension SeeCommand {
         self.logger.operationStart("element_detection")
         defer { self.logger.operationComplete("element_detection") }
 
+        let timeoutSeconds = Self.detectionTimeoutSeconds(
+            configuredTimeoutSeconds: self.timeoutSeconds,
+            analyze: self.analyze
+        )
+
         do {
-            return try await Self.withWallClockTimeout(seconds: 20.0) {
-                try await AutomationServiceBridge.detectElements(
-                    automation: self.services.automation,
-                    imageData: imageData,
+            return try await Self.detectElements(
+                automation: self.services.automation,
+                imageData: imageData,
+                windowContext: windowContext,
+                timeoutSeconds: timeoutSeconds
+            )
+        } catch is TimeoutError {
+            throw CaptureError.detectionTimedOut(timeoutSeconds)
+        }
+    }
+
+    static func detectionTimeoutSeconds(
+        configuredTimeoutSeconds: Int?,
+        analyze: String?
+    ) -> TimeInterval {
+        TimeInterval(configuredTimeoutSeconds ?? ((analyze == nil) ? 20 : 60))
+    }
+
+    static func remoteDetectionRequestTimeoutSeconds(for timeoutSeconds: TimeInterval) -> TimeInterval {
+        timeoutSeconds + 5
+    }
+
+    static func detectElements(
+        automation: any UIAutomationServiceProtocol,
+        imageData: Data,
+        windowContext: WindowContext?,
+        timeoutSeconds: TimeInterval
+    ) async throws -> ElementDetectionResult {
+        try await Self.withWallClockTimeout(seconds: timeoutSeconds) {
+            if let timeoutAdjustingAutomation = automation as? any DetectElementsRequestTimeoutAdjusting {
+                return try await timeoutAdjustingAutomation.detectElements(
+                    in: imageData,
                     snapshotId: nil,
-                    windowContext: windowContext
+                    windowContext: windowContext,
+                    requestTimeoutSec: Self.remoteDetectionRequestTimeoutSeconds(for: timeoutSeconds)
                 )
             }
-        } catch is TimeoutError {
-            throw CaptureError.detectionTimedOut(20.0)
+            return try await AutomationServiceBridge.detectElements(
+                automation: automation,
+                imageData: imageData,
+                snapshotId: nil,
+                windowContext: windowContext
+            )
         }
     }
 

@@ -12,7 +12,7 @@ read_when:
 ## Usage
 | Argument | Description |
 | --- | --- |
-| `<duration>` | Positive integer in milliseconds. Global `--json-output` works as usual. |
+| `<duration>` | Positive integer in milliseconds. Global `--json` works as usual. |
 
 ## Implementation notes
 - Durations ≤0 trigger a validation error before any waiting occurs.
@@ -22,15 +22,15 @@ read_when:
 ## Examples
 ```bash
 # Sleep 1.5 seconds
-polter peekaboo -- sleep 1500
+peekaboo sleep 1500
 
 # Guard a flaky UI transition inside a script
-polter peekaboo -- run flow.peekaboo.json --no-fail-fast \
-  && polter peekaboo -- sleep 750 \
-  && polter peekaboo -- click "Open"
+peekaboo run flow.peekaboo.json --no-fail-fast \
+  && peekaboo sleep 750 \
+  && peekaboo click "Open"
 ```
 
 ## Troubleshooting
 - Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
 - Confirm your target (app/window/selector) with `peekaboo list`/`peekaboo see` before rerunning.
-- Re-run with `--json-output` or `--verbose` to surface detailed errors.
+- Re-run with `--json` or `--verbose` to surface detailed errors.

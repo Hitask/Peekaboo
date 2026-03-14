@@ -1,12 +1,12 @@
 import PeekabooCore
+import Tachikoma
 import Testing
 @testable import PeekabooCLI
 
-@Suite("CommandRuntime Dependency Injection")
 struct CommandRuntimeInjectionTests {
-    @Test("uses the injected service provider")
+    @Test
     @MainActor
-    func usesInjectedServices() {
+    func `uses the injected service provider`() {
         let services = RecordingPeekabooServices()
         let runtime = CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: false, logLevel: nil),
@@ -16,9 +16,9 @@ struct CommandRuntimeInjectionTests {
         #expect(runtime.services is RecordingPeekabooServices)
     }
 
-    @Test("installs MCP/tool defaults when constructed")
+    @Test
     @MainActor
-    func installsAgentRuntimeDefaults() {
+    func `installs MCP/tool defaults when constructed`() {
         let services = RecordingPeekabooServices()
         _ = CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: false, logLevel: nil),
@@ -32,6 +32,22 @@ struct CommandRuntimeInjectionTests {
         let tools = ToolRegistry.allTools()
         #expect(!tools.isEmpty)
     }
+
+    @Test("aligns Tachikoma profile directory with Peekaboo")
+    @MainActor
+    func alignsTachikomaProfileDirectory() {
+        let previousProfile = TachikomaConfiguration.profileDirectoryName
+        defer { TachikomaConfiguration.profileDirectoryName = previousProfile }
+
+        TachikomaConfiguration.profileDirectoryName = ".tachikoma"
+        let services = RecordingPeekabooServices()
+        _ = CommandRuntime(
+            configuration: .init(verbose: false, jsonOutput: false, logLevel: nil),
+            services: services
+        )
+
+        #expect(TachikomaConfiguration.profileDirectoryName == ".peekaboo")
+    }
 }
 
 @MainActor
@@ -43,21 +59,71 @@ final class RecordingPeekabooServices: PeekabooServiceProviding {
         self.ensureVisualizerConnectionCallCount += 1
     }
 
-    var logging: any LoggingServiceProtocol { self.base.logging }
-    var screenCapture: any ScreenCaptureServiceProtocol { self.base.screenCapture }
-    var applications: any ApplicationServiceProtocol { self.base.applications }
-    var automation: any UIAutomationServiceProtocol { self.base.automation }
-    var windows: any WindowManagementServiceProtocol { self.base.windows }
-    var menu: any MenuServiceProtocol { self.base.menu }
-    var dock: any DockServiceProtocol { self.base.dock }
-    var dialogs: any DialogServiceProtocol { self.base.dialogs }
-    var snapshots: any SnapshotManagerProtocol { self.base.snapshots }
-    var files: any FileServiceProtocol { self.base.files }
-    var clipboard: any ClipboardServiceProtocol { self.base.clipboard }
-    var configuration: PeekabooCore.ConfigurationManager { self.base.configuration }
-    var process: any ProcessServiceProtocol { self.base.process }
-    var permissions: PermissionsService { self.base.permissions }
-    var audioInput: AudioInputService { self.base.audioInput }
-    var screens: any ScreenServiceProtocol { self.base.screens }
-    var agent: (any AgentServiceProtocol)? { self.base.agent }
+    var logging: any LoggingServiceProtocol {
+        self.base.logging
+    }
+
+    var screenCapture: any ScreenCaptureServiceProtocol {
+        self.base.screenCapture
+    }
+
+    var applications: any ApplicationServiceProtocol {
+        self.base.applications
+    }
+
+    var automation: any UIAutomationServiceProtocol {
+        self.base.automation
+    }
+
+    var windows: any WindowManagementServiceProtocol {
+        self.base.windows
+    }
+
+    var menu: any MenuServiceProtocol {
+        self.base.menu
+    }
+
+    var dock: any DockServiceProtocol {
+        self.base.dock
+    }
+
+    var dialogs: any DialogServiceProtocol {
+        self.base.dialogs
+    }
+
+    var snapshots: any SnapshotManagerProtocol {
+        self.base.snapshots
+    }
+
+    var files: any FileServiceProtocol {
+        self.base.files
+    }
+
+    var clipboard: any ClipboardServiceProtocol {
+        self.base.clipboard
+    }
+
+    var configuration: PeekabooCore.ConfigurationManager {
+        self.base.configuration
+    }
+
+    var process: any ProcessServiceProtocol {
+        self.base.process
+    }
+
+    var permissions: PermissionsService {
+        self.base.permissions
+    }
+
+    var audioInput: AudioInputService {
+        self.base.audioInput
+    }
+
+    var screens: any ScreenServiceProtocol {
+        self.base.screens
+    }
+
+    var agent: (any AgentServiceProtocol)? {
+        self.base.agent
+    }
 }

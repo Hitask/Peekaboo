@@ -39,16 +39,16 @@ If you need a longer-running, change-aware capture (idle/active FPS, contact she
 ## Examples
 ```bash
 # Capture the Safari window titled "Release Notes" and save a JPEG
-polter peekaboo -- image --app Safari --window-title "Release Notes" --format jpg --path /tmp/safari.jpg
+peekaboo image --app Safari --window-title "Release Notes" --format jpg --path /tmp/safari.jpg
 
 # Dump every display and run a quick AI summarization
-polter peekaboo -- image --mode screen --analyze "Summarize the key UI differences between the monitors"
+peekaboo image --mode screen --analyze "Summarize the key UI differences between the monitors"
 
 # Snapshot only the menu bar icons without stealing focus from the active Space
-polter peekaboo -- image --app menubar --capture-focus background
+peekaboo image --app menubar --capture-focus background
 ```
 
 ## Troubleshooting
 - Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
 - Confirm your target (app/window/selector) with `peekaboo list`/`peekaboo see` before rerunning.
-- Re-run with `--json-output` or `--verbose` to surface detailed errors.
+- Re-run with `--json` or `--verbose` to surface detailed errors.

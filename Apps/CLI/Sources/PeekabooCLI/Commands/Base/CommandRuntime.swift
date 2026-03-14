@@ -8,9 +8,10 @@ import PeekabooBridge
 import PeekabooCore
 import PeekabooFoundation
 import PeekabooProtocols
+import Tachikoma
 
 /// Shared options that control logging and output behavior.
-struct CommandRuntimeOptions: Sendable {
+struct CommandRuntimeOptions {
     var verbose = false
     var jsonOutput = false
     var logLevel: LogLevel?
@@ -51,6 +52,9 @@ struct CommandRuntime {
         services: any PeekabooServiceProviding,
         hostDescription: String = "local (in-process)"
     ) {
+        // Keep Tachikoma credential/profile resolution aligned with Peekaboo CLI storage.
+        TachikomaConfiguration.profileDirectoryName = ".peekaboo"
+
         self.configuration = configuration
         self.services = services
         self.hostDescription = hostDescription
@@ -203,7 +207,7 @@ extension RuntimeOptionsConfigurable {
 }
 
 @propertyWrapper
-struct RuntimeStorage<Value> where Value: ExpressibleByNilLiteral {
+struct RuntimeStorage<Value: ExpressibleByNilLiteral> {
     private var storage: Value
 
     init() {

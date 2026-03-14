@@ -16,7 +16,7 @@ public struct SwipeTool: MCPTool {
         Performs a swipe/drag gesture from one point to another.
         Useful for dragging elements, swiping through content, or gesture-based interactions.
         Creates smooth movement with configurable duration.
-        Peekaboo MCP 3.0.0-beta4 using openai/gpt-5.1, anthropic/claude-sonnet-4.5
+        \(PeekabooMCPVersion.banner) using openai/gpt-5.1, anthropic/claude-sonnet-4.5
         """
     }
 
@@ -131,20 +131,20 @@ public struct SwipeTool: MCPTool {
 
         let automation = self.context.automation
         try await automation.drag(
-            from: fromPoint,
-            to: toPoint,
-            duration: movement.duration,
-            steps: movement.steps,
-            modifiers: nil,
-            profile: movement.profile)
+            DragOperationRequest(
+                from: fromPoint,
+                to: toPoint,
+                duration: movement.duration,
+                steps: movement.steps,
+                modifiers: nil,
+                profile: movement.profile))
 
         let executionTime = Date().timeIntervalSince(startTime)
-        let response = self.buildResponse(
+        return self.buildResponse(
             from: fromPoint,
             to: toPoint,
             movement: movement,
             executionTime: executionTime)
-        return response
     }
 
     private func buildResponse(

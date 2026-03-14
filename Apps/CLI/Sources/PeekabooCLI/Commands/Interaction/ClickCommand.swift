@@ -5,6 +5,128 @@ import Foundation
 import PeekabooCore
 import PeekabooFoundation
 
+struct FrontmostApplicationIdentity: Equatable, Sendable {
+    let name: String?
+    let bundleIdentifier: String?
+    let processIdentifier: Int32?
+
+    init(
+        name: String? = nil,
+        bundleIdentifier: String? = nil,
+        processIdentifier: Int32? = nil
+    ) {
+        self.name = name?.nilIfEmpty
+        self.bundleIdentifier = bundleIdentifier?.nilIfEmpty
+        self.processIdentifier = processIdentifier
+    }
+
+    init(application: NSRunningApplication?) {
+        self.init(
+            name: application?.localizedName,
+            bundleIdentifier: application?.bundleIdentifier,
+            processIdentifier: application?.processIdentifier
+        )
+    }
+
+    var displayDescription: String {
+        var components: [String] = []
+        if let name = self.name {
+            components.append("'\(name)'")
+        }
+        if let bundleIdentifier = self.bundleIdentifier {
+            components.append(bundleIdentifier)
+        }
+        if let processIdentifier = self.processIdentifier {
+            components.append("PID \(processIdentifier)")
+        }
+        if components.isEmpty {
+            return "unknown application"
+        }
+        return components.joined(separator: " ")
+    }
+}
+
+enum CoordinateClickFocusVerifier {
+    static func mismatchMessage(
+        targetApp: String?,
+        targetPID: Int32?,
+        frontmost: FrontmostApplicationIdentity
+    ) -> String? {
+        guard targetApp != nil || targetPID != nil else {
+            return nil
+        }
+
+        if let targetPID, frontmost.processIdentifier == targetPID {
+            return nil
+        }
+
+        if let targetApp, self.matches(targetApp: targetApp, frontmost: frontmost) {
+            return nil
+        }
+
+        let targetDescription = self.targetDescription(targetApp: targetApp, targetPID: targetPID)
+        let frontmostDescription = frontmost.displayDescription
+
+        return """
+        \(targetDescription) is not frontmost after the focus attempt. Currently frontmost: \(frontmostDescription).
+        The coordinate click would land on the frontmost window instead.
+
+        Hints:
+          - Ensure no other window is overlapping the target
+          - Try clicking by element ID (--on) instead of coordinates
+          - Close or minimize interfering windows first
+        """
+    }
+
+    static func targetDescription(targetApp: String?, targetPID: Int32?) -> String {
+        if let targetApp {
+            return "Target app '\(targetApp)'"
+        }
+        if let targetPID {
+            return "Target PID \(targetPID)"
+        }
+        return "Target application"
+    }
+
+    private static func matches(targetApp: String, frontmost: FrontmostApplicationIdentity) -> Bool {
+        let trimmedTarget = targetApp.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTarget.isEmpty else {
+            return false
+        }
+
+        if let pid = self.parsePID(trimmedTarget), frontmost.processIdentifier == pid {
+            return true
+        }
+
+        if let bundleIdentifier = frontmost.bundleIdentifier,
+           bundleIdentifier.caseInsensitiveCompare(trimmedTarget) == .orderedSame
+        {
+            return true
+        }
+
+        if let name = frontmost.name,
+           name.caseInsensitiveCompare(trimmedTarget) == .orderedSame
+        {
+            return true
+        }
+
+        return false
+    }
+
+    private static func parsePID(_ identifier: String) -> Int32? {
+        guard identifier.hasPrefix("PID:") else {
+            return nil
+        }
+        return Int32(identifier.dropFirst(4))
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        self.isEmpty ? nil : self
+    }
+}
+
 /// Click on UI elements identified in the current snapshot using intelligent element finding and smart waiting.
 @available(macOS 14.0, *)
 @MainActor
@@ -69,10 +191,21 @@ struct ClickCommand: ErrorHandlingCommand, OutputFormattable {
         return runtime
     }
 
-    private var services: any PeekabooServiceProviding { self.resolvedRuntime.services }
-    private var logger: Logger { self.resolvedRuntime.logger }
-    var outputLogger: Logger { self.logger }
-    var jsonOutput: Bool { self.resolvedRuntime.configuration.jsonOutput }
+    private var services: any PeekabooServiceProviding {
+        self.resolvedRuntime.services
+    }
+
+    private var logger: Logger {
+        self.resolvedRuntime.logger
+    }
+
+    var outputLogger: Logger {
+        self.logger
+    }
+
+    var jsonOutput: Bool {
+        self.resolvedRuntime.configuration.jsonOutput
+    }
 
     @MainActor
     mutating func run(using runtime: CommandRuntime) async throws {
@@ -98,6 +231,12 @@ struct ClickCommand: ErrorHandlingCommand, OutputFormattable {
                 waitResult = WaitForElementResult(found: true, element: nil, waitTime: 0)
                 activeSnapshotId = "" // Not needed for coordinate clicks
                 try await self.focusApplicationIfNeeded(snapshotId: nil)
+
+                // Verify target app is actually frontmost after focus attempt.
+                // InputDriver.click() sends a CGEvent at screen-absolute coordinates,
+                // so if the target window is not frontmost, the click will land on
+                // whatever window is at that position (see #90).
+                try self.verifyFocusForCoordinateClick()
 
             } else {
                 // For element-based clicks, try to get a snapshot but allow fallback
@@ -289,6 +428,35 @@ struct ClickCommand: ErrorHandlingCommand, OutputFormattable {
 
         // Brief delay to ensure focus is complete before interacting
         try await Task.sleep(nanoseconds: 100_000_000)
+    }
+
+    /// Verify that the target app is actually frontmost before dispatching a coordinate click.
+    ///
+    /// When `--app` is specified with `--coords`, the click uses `InputDriver.click()` which
+    /// sends a CGEvent at screen-absolute coordinates. If the focus step didn't actually bring
+    /// the target window to the front (common with Electron apps like Claude Desktop, VS Code),
+    /// the click will land on whatever window happens to be at that screen position.
+    ///
+    /// This method checks that the frontmost app matches any explicit `--app` / `--pid` target
+    /// and throws if it does not, giving actionable feedback instead of silently clicking the wrong app.
+    private func verifyFocusForCoordinateClick() throws {
+        let frontmost = FrontmostApplicationIdentity(application: NSWorkspace.shared.frontmostApplication)
+        if let message = CoordinateClickFocusVerifier.mismatchMessage(
+            targetApp: self.target.app,
+            targetPID: self.target.pid,
+            frontmost: frontmost
+        ) {
+            let targetDescription = CoordinateClickFocusVerifier.targetDescription(
+                targetApp: self.target.app,
+                targetPID: self.target.pid
+            )
+            self.logger.warn(
+                "Coordinate click focus mismatch for " +
+                    "\(targetDescription). " +
+                    "Frontmost is \(frontmost.displayDescription)."
+            )
+            throw PeekabooError.clickFailed(message)
+        }
     }
 
     // Error handling is provided by ErrorHandlingCommand protocol

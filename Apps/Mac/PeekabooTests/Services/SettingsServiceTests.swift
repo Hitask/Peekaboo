@@ -1,8 +1,10 @@
+import Darwin
 import Foundation
+import PeekabooCore
 import Testing
 @testable import Peekaboo
 
-@Suite("PeekabooSettings Tests", .tags(.services, .unit))
+@Suite(.tags(.services, .unit))
 @MainActor
 final class PeekabooSettingsTests {
     var settings: PeekabooSettings!
@@ -14,8 +16,8 @@ final class PeekabooSettingsTests {
         }
     }
 
-    @Test("Default values are set correctly")
-    func defaultValues() {
+    @Test
+    func `Default values are set correctly`() {
         #expect(self.settings.openAIAPIKey.isEmpty)
         #expect(self.settings.selectedModel == "gpt-4o")
         #expect(self.settings.alwaysOnTop == false)
@@ -28,8 +30,8 @@ final class PeekabooSettingsTests {
         #expect(self.settings.temperature == 0.7)
     }
 
-    @Test("API key validation")
-    func aPIKeyValidation() {
+    @Test
+    func `API key validation`() {
         // Empty key should be invalid
         #expect(!self.settings.hasValidAPIKey)
 
@@ -42,8 +44,8 @@ final class PeekabooSettingsTests {
         #expect(!self.settings.hasValidAPIKey)
     }
 
-    @Test("Model selection updates correctly")
-    func modelSelection() {
+    @Test
+    func `Model selection updates correctly`() {
         let models = ["gpt-4o", "gpt-4o-mini", "o1-preview", "o1-mini"]
 
         for model in models {
@@ -52,7 +54,7 @@ final class PeekabooSettingsTests {
         }
     }
 
-    @Test("Temperature bounds are enforced", arguments: [
+    @Test(arguments: [
         (-1.0, 0.0), // Below minimum
         (0.0, 0.0), // Minimum
         (0.5, 0.5), // Valid middle
@@ -60,25 +62,25 @@ final class PeekabooSettingsTests {
         (2.0, 1.0), // Above maximum
         (2.5, 1.0) // Way above maximum
     ])
-    func temperatureBounds(input: Double, expected: Double) {
+    func `Temperature bounds are enforced`(input: Double, expected: Double) {
         self.settings.temperature = input
         #expect(self.settings.temperature == expected)
     }
 
-    @Test("Max tokens bounds are enforced", arguments: [
+    @Test(arguments: [
         (0, 1), // Below minimum
         (1, 1), // Minimum
         (8192, 8192), // Valid middle
         (128_000, 128_000), // Maximum
         (200_000, 128_000) // Above maximum
     ])
-    func maxTokensBounds(input: Int, expected: Int) {
+    func `Max tokens bounds are enforced`(input: Int, expected: Int) {
         self.settings.maxTokens = input
         #expect(self.settings.maxTokens == expected)
     }
 
-    @Test("Toggle settings work correctly")
-    func togglePeekabooSettings() {
+    @Test
+    func `Toggle settings work correctly`() throws {
         // Test all boolean settings
         let toggles: [(WritableKeyPath<PeekabooSettings, Bool>, String)] = [
             (\.alwaysOnTop, "alwaysOnTop"),
@@ -90,27 +92,27 @@ final class PeekabooSettingsTests {
         ]
 
         for (keyPath, _) in toggles {
-            let originalValue = self.settings![keyPath: keyPath]
+            let originalValue = try #require(self.settings?[keyPath: keyPath])
 
             // Toggle on
-            self.settings![keyPath: keyPath] = true
-            #expect(self.settings![keyPath: keyPath] == true)
+            self.settings?[keyPath: keyPath] = true
+            #expect(self.settings?[keyPath: keyPath] == true)
 
             // Toggle off
-            self.settings![keyPath: keyPath] = false
-            #expect(self.settings![keyPath: keyPath] == false)
+            self.settings?[keyPath: keyPath] = false
+            #expect(self.settings?[keyPath: keyPath] == false)
 
             // Restore original
-            self.settings![keyPath: keyPath] = originalValue
+            self.settings?[keyPath: keyPath] = originalValue
         }
     }
 }
 
-@Suite("PeekabooSettings Persistence Tests", .tags(.services, .integration))
+@Suite(.tags(.services, .integration))
 @MainActor
 struct PeekabooSettingsPersistenceTests {
-    @Test("PeekabooSettings persist across instances")
-    func settingsPersistence() async throws {
+    @Test
+    func `PeekabooSettings persist across instances`() async {
         let suiteName = UUID().uuidString
         let testAPIKey = "sk-test-persistence-key"
         let testModel = "o1-preview"
@@ -139,5 +141,124 @@ struct PeekabooSettingsPersistenceTests {
 
         // Clean up
         UserDefaults().removePersistentDomain(forName: suiteName)
+    }
+}
+
+
+@Suite("PeekabooSettings Config Hydration Tests", .tags(.services, .integration))
+@MainActor
+struct PeekabooSettingsConfigHydrationTests {
+    @Test("Configuration-backed state survives init")
+    func configurationBackedStateSurvivesInit() throws {
+        try withIsolatedSettingsEnvironment { configDir in
+            let configPath = configDir.appendingPathComponent("config.json")
+            let configJSON = """
+            {
+              "aiProviders": {
+                "providers": "anthropic/claude-sonnet-4-5-20250929,ollama/llava:latest"
+              },
+              "agent": {
+                "defaultModel": "claude-sonnet-4-5-20250929",
+                "temperature": 0.3,
+                "maxTokens": 4096
+              }
+            }
+            """
+            try configJSON.write(to: configPath, atomically: true, encoding: .utf8)
+
+            let defaults = UserDefaults.standard
+            defaults.set(true, forKey: "peekaboo.agentModeEnabled")
+            defaults.set(false, forKey: "peekaboo.showInDock")
+
+            ConfigurationManager.shared.resetForTesting()
+            _ = ConfigurationManager.shared.loadConfiguration()
+
+            let settings = PeekabooSettings()
+
+            #expect(settings.selectedProvider == "anthropic")
+            #expect(settings.selectedModel == "claude-sonnet-4-5-20250929")
+            #expect(settings.temperature == 0.3)
+            #expect(settings.maxTokens == 4096)
+            #expect(settings.agentModeEnabled == true)
+            #expect(settings.showInDock == false)
+
+            let persistedConfig = try String(contentsOf: configPath, encoding: .utf8)
+            #expect(persistedConfig == configJSON)
+            #expect(defaults.bool(forKey: "peekaboo.agentModeEnabled") == true)
+            #expect(defaults.bool(forKey: "peekaboo.showInDock") == false)
+        }
+    }
+
+    @Test("Configuration-backed provider aliases hydrate to Google and built-ins include Grok")
+    func configurationBackedProviderAliasesHydrateToGoogle() throws {
+        try withIsolatedSettingsEnvironment { configDir in
+            let configPath = configDir.appendingPathComponent("config.json")
+            let configJSON = """
+            {
+              "aiProviders": {
+                "providers": "gemini/gemini-3-flash,ollama/llava:latest"
+              },
+              "agent": {
+                "defaultModel": "gemini-3-flash"
+              }
+            }
+            """
+            try configJSON.write(to: configPath, atomically: true, encoding: .utf8)
+
+            ConfigurationManager.shared.resetForTesting()
+            _ = ConfigurationManager.shared.loadConfiguration()
+
+            let settings = PeekabooSettings()
+
+            #expect(settings.selectedProvider == "google")
+            #expect(settings.selectedModel == "gemini-3-flash")
+            #expect(settings.allAvailableProviders.contains("google"))
+            #expect(settings.allAvailableProviders.contains("grok"))
+        }
+    }
+}
+
+@MainActor
+private func withIsolatedSettingsEnvironment(_ body: (URL) throws -> Void) throws {
+    let fileManager = FileManager.default
+    let configDir = fileManager.temporaryDirectory
+        .appendingPathComponent("peekaboo-settings-tests-\(UUID().uuidString)", isDirectory: true)
+    try fileManager.createDirectory(at: configDir, withIntermediateDirectories: true)
+
+    let defaults = UserDefaults.standard
+    let previousConfigDir = getenv("PEEKABOO_CONFIG_DIR").map { String(cString: $0) }
+    let previousDisableMigration = getenv("PEEKABOO_CONFIG_DISABLE_MIGRATION").map { String(cString: $0) }
+    let previousKeys = defaults.dictionaryRepresentation().filter { $0.key.hasPrefix("peekaboo.") }
+
+    clearPeekabooDefaults(defaults)
+    setenv("PEEKABOO_CONFIG_DIR", configDir.path, 1)
+    setenv("PEEKABOO_CONFIG_DISABLE_MIGRATION", "1", 1)
+    ConfigurationManager.shared.resetForTesting()
+
+    defer {
+        clearPeekabooDefaults(defaults)
+        for (key, value) in previousKeys {
+            defaults.set(value, forKey: key)
+        }
+        if let previousConfigDir {
+            setenv("PEEKABOO_CONFIG_DIR", previousConfigDir, 1)
+        } else {
+            unsetenv("PEEKABOO_CONFIG_DIR")
+        }
+        if let previousDisableMigration {
+            setenv("PEEKABOO_CONFIG_DISABLE_MIGRATION", previousDisableMigration, 1)
+        } else {
+            unsetenv("PEEKABOO_CONFIG_DISABLE_MIGRATION")
+        }
+        ConfigurationManager.shared.resetForTesting()
+        try? fileManager.removeItem(at: configDir)
+    }
+
+    try body(configDir)
+}
+
+private func clearPeekabooDefaults(_ defaults: UserDefaults) {
+    for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("peekaboo.") {
+        defaults.removeObject(forKey: key)
     }
 }

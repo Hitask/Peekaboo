@@ -5,6 +5,35 @@ import MCP
 import PeekabooAutomation
 import TachikomaMCP
 
+enum RunningApplicationTextFormatter {
+    static func format(_ app: ServiceApplicationInfo, index: Int) -> String {
+        var entry = "\(index + 1). \(app.name)"
+        if let bundleID = app.bundleIdentifier, !bundleID.isEmpty {
+            entry += " (\(bundleID))"
+        }
+        if let bundlePath = app.bundlePath, !bundlePath.isEmpty {
+            entry += " [\(bundlePath)]"
+        }
+        entry += " - PID: \(app.processIdentifier)"
+        if app.isActive {
+            entry += " [ACTIVE]"
+        }
+        if app.isHidden {
+            entry += " [HIDDEN]"
+        }
+        entry += " - Windows: \(app.windowCount)"
+        return entry
+    }
+
+    static func activeLine(_ app: ServiceApplicationInfo) -> String {
+        var activeLine = "\nActive application: \(app.name)"
+        if let bundleID = app.bundleIdentifier, !bundleID.isEmpty {
+            activeLine += " (\(bundleID))"
+        }
+        return activeLine
+    }
+}
+
 /// MCP tool for listing various system items
 public struct ListTool: MCPTool {
     private let context: MCPToolContext
@@ -22,7 +51,7 @@ public struct ListTool: MCPTool {
     - { "item_type": "running_applications" }
     - { "item_type": "application_windows", "app": "Notes", "include_window_details": ["ids", "bounds"] }
     - { "item_type": "server_status" }
-    Peekaboo MCP 3.0.0-beta4 using openai/gpt-5.1, anthropic/claude-sonnet-4.5
+    \(PeekabooMCPVersion.banner) using openai/gpt-5.1, anthropic/claude-sonnet-4.5
     """
 
     public var inputSchema: Value {
@@ -90,24 +119,11 @@ public struct ListTool: MCPTool {
             lines.append("")
 
             for (index, app) in apps.indexed() {
-                var entry = "\(index + 1). \(app.name)"
-                if let bundleID = app.bundleIdentifier, !bundleID.isEmpty {
-                    entry += " (\(bundleID))"
-                }
-                entry += " - PID: \(app.processIdentifier)"
-                if app.isActive {
-                    entry += " [ACTIVE]"
-                }
-                entry += " - Windows: \(app.windowCount)"
-                lines.append(entry)
+                lines.append(RunningApplicationTextFormatter.format(app, index: index))
             }
 
             if let activeApp = apps.first(where: { $0.isActive }) {
-                var activeLine = "\nActive application: \(activeApp.name)"
-                if let bundleID = activeApp.bundleIdentifier {
-                    activeLine += " (\(bundleID))"
-                }
-                lines.append(activeLine)
+                lines.append(RunningApplicationTextFormatter.activeLine(activeApp))
             }
 
             let summary = ToolEventSummary(
@@ -142,7 +158,7 @@ public struct ListTool: MCPTool {
         // 1. Server version
         sections.append("# Peekaboo MCP Server Status")
         sections.append("")
-        sections.append("Version: 3.0.0-beta4")
+        sections.append("Version: \(PeekabooMCPVersion.current)")
         sections.append("Platform: macOS")
         sections.append("")
 
@@ -344,7 +360,7 @@ private struct WindowListFormatter {
     }
 }
 
-// Extension to get processor architecture
+/// Extension to get processor architecture
 extension ProcessInfo {
     fileprivate nonisolated var processorArchitecture: String {
         #if arch(arm64)

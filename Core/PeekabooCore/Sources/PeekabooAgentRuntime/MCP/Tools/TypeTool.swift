@@ -17,7 +17,7 @@ public struct TypeTool: MCPTool {
         Types text into UI elements or at current focus.
         Supports special keys ({return}, {tab}, etc.) plus human typing (--wpm) or fixed-delay (--delay) pacing.
         Can target specific elements or type at current keyboard focus.
-        Peekaboo MCP 3.0.0-beta4 using openai/gpt-5.1
+        \(PeekabooMCPVersion.banner) using openai/gpt-5.1
         and anthropic/claude-sonnet-4.5
         """
     }
@@ -349,7 +349,9 @@ private struct TypeRequest {
 
 private struct TypeToolValidationError: Error {
     let message: String
-    init(_ message: String) { self.message = message }
+    init(_ message: String) {
+        self.message = message
+    }
 }
 
 private struct TargetElementContext {

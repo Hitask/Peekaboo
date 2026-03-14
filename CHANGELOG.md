@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Fixed
+- Test runs now stay hermetic after MCP Swift SDK 0.11 updates by pinning the latest Tachikoma bridge/resource conversions and preventing provider test helpers from consuming live API keys.
+- macOS settings now surface Google/Gemini and Grok providers with canonical provider hydration and manual key overrides.
+- MCP `list` / `see` text output now surfaces hidden apps, bundle paths, and richer element metadata; thanks @metahacker for [#93](https://github.com/steipete/Peekaboo/pull/93).
+- MCP tool descriptions and server-status output now share centralized version/banner metadata; thanks @0xble for [#85](https://github.com/steipete/Peekaboo/pull/85).
+- Agent tool responses now handle current MCP resource/resource-link content shapes; thanks @huntharo for [#95](https://github.com/steipete/Peekaboo/pull/95).
+- CLI credential writes now honor Peekaboo’s config/profile directory consistently; thanks @0xble for [#82](https://github.com/steipete/Peekaboo/pull/82).
+- macOS settings hydration no longer persists config-backed values while loading; thanks @0xble for [#86](https://github.com/steipete/Peekaboo/pull/86).
+- CLI agent runtime now prefers local execution by default; thanks @0xble for [#83](https://github.com/steipete/Peekaboo/pull/83).
+- Remote `peekaboo see` element detection now uses the command timeout instead of the bridge client's shorter socket default; thanks @0xble for [#89](https://github.com/steipete/Peekaboo/pull/89).
+- Screen recording permission checks are more reliable, and MCP Swift SDK compatibility is restored; thanks @romanr for [#94](https://github.com/steipete/Peekaboo/pull/94).
+- Coordinate clicks now fail fast when the requested target app is not actually frontmost after focus; thanks @shawny011717 for [#91](https://github.com/steipete/Peekaboo/pull/91).
+- Permissions docs now point to the real `peekaboo permissions status|grant` commands; thanks @Undertone0809 for [#68](https://github.com/steipete/Peekaboo/pull/68).
+
 ## [3.0.0-beta4] (unreleased)
 
 ### Added
@@ -100,7 +114,7 @@
 - Menu tooling now enumerates every application menu plus system menu extras, enabling zero-click discovery of keyboard shortcuts and scripted menu activation via `menu list`, `menu list-all`, `menu click`, and `menu click-extra`.
 - Automation snapshots remember the most recent `see` run automatically, but you can also pin explicit snapshot IDs and run `.peekaboo.json` scripts via `peekaboo run` to reproduce complex workflows with one command.
 - Rounded out the CLI command surface so every capture, interaction, and maintenance workflow is first-class: `image`, `list`, `tools`, `config`, `permissions`, `learn`, `run`, `sleep`, and `clean` cover capture/config glue, while `window`, `app`, `dock`, `dialog`, `space`, `menu`, and `menubar` provide window, app, and UI chrome management alongside the previously mentioned automation commands.
-- `peekaboo see --json-output` now includes `description`, `role_description`, and `help` fields for every `ui_elements[]` entry so toolbar icons (like the Wingman extension) and other AX-only descriptions can be located without blind coordinate clicks.
+- `peekaboo see --json` now includes `description`, `role_description`, and `help` fields for every `ui_elements[]` entry so toolbar icons (like the Wingman extension) and other AX-only descriptions can be located without blind coordinate clicks.
 - GPT-5.1, GPT-5.1 Mini, and GPT-5.1 Nano are now fully supported across the CLI, macOS app, and MCP bridge. `peekaboo agent` defaults to `gpt-5.1`, the app’s AI settings expose the new variants, and all MCP tool banners reflect the upgraded default.
 
 ### Integrations

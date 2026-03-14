@@ -33,20 +33,20 @@ read_when:
 ## Examples
 ```bash
 # Drag a file element into the Trash
-polter peekaboo -- drag --from file_tile_3 --to-app Trash
+peekaboo drag --from file_tile_3 --to-app Trash
 
 # Coordinate → coordinate drag with longer duration
-polter peekaboo -- drag --from-coords "120,880" --to-coords "480,220" --duration 1200 --steps 40
+peekaboo drag --from-coords "120,880" --to-coords "480,220" --duration 1200 --steps 40
 
 # Human-style drag with adaptive timing
-polter peekaboo -- drag --from-coords "80,80" --to-coords "420,260" --profile human
+peekaboo drag --from-coords "80,80" --to-coords "420,260" --profile human
 
 # Range-select items by holding Shift
-polter peekaboo -- drag --from row_1 --to row_5 --modifiers shift
+peekaboo drag --from row_1 --to row_5 --modifiers shift
 ```
 
 ## Troubleshooting
 - Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
 - Confirm your target (app/window/selector) with `peekaboo list`/`peekaboo see` before rerunning.
 - If you see `SNAPSHOT_NOT_FOUND`, regenerate the snapshot with `peekaboo see` (or omit `--snapshot` to use the most recent one).
-- Re-run with `--json-output` or `--verbose` to surface detailed errors.
+- Re-run with `--json` or `--verbose` to surface detailed errors.

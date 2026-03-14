@@ -123,12 +123,25 @@ struct SeeCommand: ApplicationResolvable, ErrorHandlingCommand, RuntimeOptionsCo
         return runtime
     }
 
-    var jsonOutput: Bool { self.runtime?.configuration.jsonOutput ?? self.runtimeOptions.jsonOutput }
-    var verbose: Bool { self.runtime?.configuration.verbose ?? self.runtimeOptions.verbose }
+    var jsonOutput: Bool {
+        self.runtime?.configuration.jsonOutput ?? self.runtimeOptions.jsonOutput
+    }
 
-    var logger: Logger { self.resolvedRuntime.logger }
-    var services: any PeekabooServiceProviding { self.resolvedRuntime.services }
-    var outputLogger: Logger { self.logger }
+    var verbose: Bool {
+        self.runtime?.configuration.verbose ?? self.runtimeOptions.verbose
+    }
+
+    var logger: Logger {
+        self.resolvedRuntime.logger
+    }
+
+    var services: any PeekabooServiceProviding {
+        self.resolvedRuntime.services
+    }
+
+    var outputLogger: Logger {
+        self.logger
+    }
 
     @MainActor
     mutating func run(using runtime: CommandRuntime) async throws {
@@ -344,13 +357,15 @@ struct SeeCommand: ApplicationResolvable, ErrorHandlingCommand, RuntimeOptionsCo
         )
 
         try await self.services.snapshots.storeScreenshot(
-            snapshotId: detectionResult.snapshotId,
-            screenshotPath: outputPath,
-            applicationBundleId: captureResult.metadata.applicationInfo?.bundleIdentifier,
-            applicationProcessId: captureResult.metadata.applicationInfo.map { Int32($0.processIdentifier) },
-            applicationName: windowContext.applicationName,
-            windowTitle: windowContext.windowTitle,
-            windowBounds: windowContext.windowBounds
+            SnapshotScreenshotRequest(
+                snapshotId: detectionResult.snapshotId,
+                screenshotPath: outputPath,
+                applicationBundleId: captureResult.metadata.applicationInfo?.bundleIdentifier,
+                applicationProcessId: captureResult.metadata.applicationInfo.map { Int32($0.processIdentifier) },
+                applicationName: windowContext.applicationName,
+                windowTitle: windowContext.windowTitle,
+                windowBounds: windowContext.windowBounds
+            )
         )
 
         // Store the result in snapshot
@@ -791,11 +806,11 @@ extension SeeCommand: ParsableCommand {
                 discussion: definition.discussion,
                 usageExamples: [
                     CommandUsageExample(
-                        command: "peekaboo see --json-output --annotate --path /tmp/see.png",
+                        command: "peekaboo see --json --annotate --path /tmp/see.png",
                         description: "Capture the frontmost window, print structured output, and save annotations."
                     ),
                     CommandUsageExample(
-                        command: "peekaboo see --app Safari --window-title \"Login\" --json-output",
+                        command: "peekaboo see --app Safari --window-title \"Login\" --json",
                         description: "Target a specific Safari window to collect stable element IDs."
                     ),
                     CommandUsageExample(

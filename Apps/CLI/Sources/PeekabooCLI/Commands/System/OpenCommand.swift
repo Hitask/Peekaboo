@@ -23,10 +23,10 @@ struct OpenCommand: ParsableCommand, OutputFormattable, ErrorHandlingCommand, Ru
                 - `--app` / `--bundle-id` to force a handler
                 - `--wait-until-ready` to block until the app reports it has finished launching
                 - `--no-focus` to keep the handler in the background
-                - `--json-output` for structured scripting
+                - `--json` for structured scripting (alias: `--json-output`)
 
                 EXAMPLES:
-                  peekaboo open https://example.com --json-output
+                  peekaboo open https://example.com --json
                   peekaboo open ~/Documents/report.pdf --app "Preview"
                   peekaboo open myfile.txt --bundle-id com.apple.TextEdit --wait-until-ready
                   peekaboo open ~/Desktop --app Finder --no-focus
@@ -61,10 +61,21 @@ struct OpenCommand: ParsableCommand, OutputFormattable, ErrorHandlingCommand, Ru
         return runtime
     }
 
-    private var logger: Logger { self.resolvedRuntime.logger }
-    var outputLogger: Logger { self.logger }
-    var jsonOutput: Bool { self.runtime?.configuration.jsonOutput ?? self.runtimeOptions.jsonOutput }
-    private var shouldFocus: Bool { !self.noFocus }
+    private var logger: Logger {
+        self.resolvedRuntime.logger
+    }
+
+    var outputLogger: Logger {
+        self.logger
+    }
+
+    var jsonOutput: Bool {
+        self.runtime?.configuration.jsonOutput ?? self.runtimeOptions.jsonOutput
+    }
+
+    private var shouldFocus: Bool {
+        !self.noFocus
+    }
 
     @MainActor
     mutating func run(using runtime: CommandRuntime) async throws {

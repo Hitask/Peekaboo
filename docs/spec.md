@@ -21,7 +21,7 @@ Peekaboo’s mission is to make macOS GUI automation as deterministic—and debu
 2. **Semantic interaction:** Commands operate on accessibility metadata (roles, labels, element IDs) instead of raw coordinates wherever possible.
 3. **Visual transparency:** All interactions should be explainable via JSON output, logs, and annotated screenshots so humans/agents can reason about state.
 4. **Reliability by default:** Commands autofocus windows (`FocusCommandOptions`), wait for actionable elements, and reuse sessions instead of forcing manual sleeps.
-5. **Agent awareness:** Outputs are machine-friendly (`--json-output`), and behaviors are documented in `docs/commands/*.md` so autonomous clients receive the same guidance as humans.
+5. **Agent awareness:** Outputs are machine-friendly (`--json`), and behaviors are documented in `docs/commands/*.md` so autonomous clients receive the same guidance as humans.
 
 **Scope:**
 - CLI automation (`Apps/CLI`) built on `PeekabooCore` services.
@@ -37,8 +37,8 @@ Not in scope: backwards compatibility with pre-3.0 CLIs, legacy argument parser 
 
 | Surface | Entry point | Purpose | Notes |
 | --- | --- | --- | --- |
-| CLI | `polter peekaboo …` | Primary automation surface with Commander-based command tree, JSON outputs, and agent-friendly logging. | Default actor is `@MainActor`. Commands live under `Apps/CLI/Sources/PeekabooCLI/Commands`. |
-| Peekaboo.app | `Apps/Peekaboo` | Menu-bar UI + inspector. Shares `PeekabooServices()` with CLI and registers defaults via `services.installAgentRuntimeDefaults()`. | Launching via `polter peekaboo …` starts the UI alongside the CLI binary. |
+| CLI | `peekaboo …` | Primary automation surface with Commander-based command tree, JSON outputs, and agent-friendly logging. | Default actor is `@MainActor`. Commands live under `Apps/CLI/Sources/PeekabooCLI/Commands`. |
+| Peekaboo.app | `Apps/Peekaboo` | Menu-bar UI + inspector. Shares `PeekabooServices()` with CLI and registers defaults via `services.installAgentRuntimeDefaults()`. | Running via `polter peekaboo …` during local development starts the UI alongside the CLI binary. |
 | Visualizer | `PeekabooVisualizer` target | Animations, overlays, and progress indicators consumed by both CLI and app. | Communicates through the service layer (no direct AppKit glue inside commands). |
 | Agent runtime | `PeekabooAgentRuntime` + Tachikoma | Implements `peekaboo agent`, GPT‑5/Sonnet integrations, dry-run planners, audio input, and MCP tools. | System prompt + tool descriptions live in `PeekabooAgentService.generateSystemPrompt()` and `create*Tool()` helpers. |
 | MCP server | `peekaboo mcp` | Exposes native tools via Model Context Protocol. | Uses `PeekabooMCPServer`. |

@@ -33,23 +33,23 @@ read_when:
 ## Examples
 ```bash
 # Type text and press Return afterwards
-polter peekaboo -- type "open ~/Downloads\n" --app "Terminal"
+peekaboo type "open ~/Downloads\n" --app "Terminal"
 
 # Clear the current field, type a username, tab twice, then hit Return
-polter peekaboo -- type alice@example.com --clear --tab 2 --return
+peekaboo type alice@example.com --clear --tab 2 --return
 
 # Send only control keys during a form walk
-polter peekaboo -- type --tab 1 --tab 1 --return
+peekaboo type --tab 1 --tab 1 --return
 
 # Human typing at 140 WPM
-polter peekaboo -- type "status report ready" --wpm 140
+peekaboo type "status report ready" --wpm 140
 
 # Linear profile with fixed 10ms delay
-polter peekaboo -- type "fast" --profile linear --delay 10
+peekaboo type "fast" --profile linear --delay 10
 ```
 
 ## Troubleshooting
 - Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
 - Confirm your target (app/window/selector) with `peekaboo list`/`peekaboo see` before rerunning.
 - If you see `SNAPSHOT_NOT_FOUND`, regenerate the snapshot with `peekaboo see` (or omit `--snapshot` to use the most recent one).
-- Re-run with `--json-output` or `--verbose` to surface detailed errors.
+- Re-run with `--json` or `--verbose` to surface detailed errors.

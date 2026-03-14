@@ -21,13 +21,13 @@ read_when:
 ## Examples
 ```bash
 # Start the Peekaboo MCP server (defaults to stdio)
-polter peekaboo -- mcp
+peekaboo mcp
 
 # Explicit transport selection
-polter peekaboo -- mcp serve --transport stdio
+peekaboo mcp serve --transport stdio
 ```
 
 ## Troubleshooting
 - Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
 - Confirm your target (app/window/selector) with `peekaboo list`/`peekaboo see` before rerunning.
-- Re-run with `--json-output` or `--verbose` to surface detailed errors.
+- Re-run with `--json` or `--verbose` to surface detailed errors.

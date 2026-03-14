@@ -9,7 +9,7 @@ enum CommanderCLIBinder {
         parsedValues: ParsedValues
     ) throws -> any ParsableCommand {
         var command = type.init()
-        let runtimeOptions = try self.makeRuntimeOptions(from: parsedValues)
+        let runtimeOptions = try self.makeRuntimeOptions(from: parsedValues, commandType: type)
         if var bindable = command as? any CommanderBindableCommand {
             try bindable.applyCommanderValues(.init(parsedValues: parsedValues))
             guard let rebound = bindable as? any ParsableCommand else {
@@ -27,17 +27,20 @@ enum CommanderCLIBinder {
         return command
     }
 
-    static func instantiateCommand<T>(
+    static func instantiateCommand<T: ParsableCommand>(
         ofType type: T.Type,
         parsedValues: ParsedValues
-    ) throws -> T where T: ParsableCommand {
+    ) throws -> T {
         guard let command = try instantiateCommand(type: type, parsedValues: parsedValues) as? T else {
             preconditionFailure("Commander instantiation failed to produce expected type \(T.self)")
         }
         return command
     }
 
-    static func makeRuntimeOptions(from parsedValues: ParsedValues) throws -> CommandRuntimeOptions {
+    static func makeRuntimeOptions(
+        from parsedValues: ParsedValues,
+        commandType: (any ParsableCommand.Type)? = nil
+    ) throws -> CommandRuntimeOptions {
         var options = CommandRuntimeOptions()
         options.verbose = parsedValues.flags.contains("verbose")
         options.jsonOutput = parsedValues.flags.contains("jsonOutput")
@@ -51,6 +54,10 @@ enum CommanderCLIBinder {
             options.captureEnginePreference = captureEngine
         }
         if values.flag("no-remote") {
+            options.preferRemote = false
+        }
+        if commandType == AgentCommand.self && !values.flag("no-remote") {
+            // Agent execution should stay local by default unless explicitly overridden.
             options.preferRemote = false
         }
         if let socketPath = values.singleOption("bridge-socket")?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -226,7 +233,7 @@ protocol CommanderBindableCommand {
     mutating func applyCommanderValues(_ values: CommanderBindableValues) throws
 }
 
-enum CommanderBindingError: LocalizedError, Sendable, Equatable {
+enum CommanderBindingError: LocalizedError, Equatable {
     case missingArgument(label: String)
     case invalidArgument(label: String, value: String, reason: String)
 

@@ -7,19 +7,18 @@ import Testing
 @testable import PeekabooVisualizer
 
 @Suite(
-    "GestureService Tests",
     .tags(.ui, .automation, .requiresDisplay),
     .enabled(if: TestEnvironment.runInputAutomationScenarios))
 @MainActor
 struct GestureServiceTests {
-    @Test("Initialize GestureService")
-    func initializeService() async throws {
+    @Test
+    func `Initialize GestureService`() {
         let service: GestureService? = GestureService()
         #expect(service != nil)
     }
 
-    @Test("Move mouse to position")
-    func moveMouseToPosition() async throws {
+    @Test
+    func `Move mouse to position`() async throws {
         let service = GestureService()
 
         // Test moving mouse to various positions
@@ -35,24 +34,25 @@ struct GestureServiceTests {
         }
     }
 
-    @Test("Drag from point to point")
-    func dragBetweenPoints() async throws {
+    @Test
+    func `Drag from point to point`() async throws {
         let service = GestureService()
 
         let start = CGPoint(x: 100, y: 100)
         let end = CGPoint(x: 500, y: 500)
 
         try await service.drag(
-            from: start,
-            to: end,
-            duration: 500,
-            steps: 20,
-            modifiers: nil,
-            profile: .linear)
+            DragOperationRequest(
+                from: start,
+                to: end,
+                duration: 500,
+                steps: 20,
+                modifiers: nil,
+                profile: .linear))
     }
 
-    @Test("Drag with duration")
-    func dragWithCustomDuration() async throws {
+    @Test
+    func `Drag with duration`() async throws {
         let service = GestureService()
 
         let start = CGPoint(x: 200, y: 200)
@@ -60,20 +60,21 @@ struct GestureServiceTests {
 
         let startTime = Date()
         try await service.drag(
-            from: start,
-            to: end,
-            duration: 1000,
-            steps: 20,
-            modifiers: nil,
-            profile: .linear) // 1 second drag
+            DragOperationRequest(
+                from: start,
+                to: end,
+                duration: 1000,
+                steps: 20,
+                modifiers: nil,
+                profile: .linear)) // 1 second drag
         let elapsed = Date().timeIntervalSince(startTime)
 
         // Should take approximately 1 second
         #expect(elapsed >= 0.9 && elapsed <= 1.2)
     }
 
-    @Test("Swipe gestures")
-    func swipeInAllDirections() async throws {
+    @Test
+    func `Swipe gestures`() async throws {
         let service = GestureService()
 
         let center = CGPoint(x: 500, y: 500)
@@ -106,8 +107,8 @@ struct GestureServiceTests {
             profile: .linear) // Down
     }
 
-    @Test("Swipe with custom distance")
-    func swipeWithDistance() async throws {
+    @Test
+    func `Swipe with custom distance`() async throws {
         let service = GestureService()
 
         let center = CGPoint(x: 500, y: 500)
@@ -124,8 +125,8 @@ struct GestureServiceTests {
         }
     }
 
-    @Test("Pinch gesture")
-    func pinchGesture() async throws {
+    @Test
+    func `Pinch gesture`() async throws {
         let service = GestureService()
 
         let center = CGPoint(x: 500, y: 500)
@@ -142,8 +143,8 @@ struct GestureServiceTests {
         try await service.swipe(from: finger2Start, to: finger2End, duration: 500, steps: 20, profile: .linear)
     }
 
-    @Test("Rotate gesture")
-    func rotateGesture() async throws {
+    @Test
+    func `Rotate gesture`() async throws {
         let service = GestureService()
 
         let center = CGPoint(x: 500, y: 500)
@@ -164,16 +165,17 @@ struct GestureServiceTests {
             y: center.y + radius * sin(endAngle))
 
         try await service.drag(
-            from: startPoint,
-            to: endPoint,
-            duration: 500,
-            steps: steps,
-            modifiers: nil,
-            profile: .linear)
+            DragOperationRequest(
+                from: startPoint,
+                to: endPoint,
+                duration: 500,
+                steps: steps,
+                modifiers: nil,
+                profile: .linear))
     }
 
-    @Test("Multi-touch tap")
-    func multiTouchTap() async throws {
+    @Test
+    func `Multi-touch tap`() async throws {
         let service = GestureService()
 
         let points = [
@@ -188,23 +190,30 @@ struct GestureServiceTests {
         }
     }
 
-    @Test("Long press")
-    func longPress() async throws {
+    @Test
+    func `Long press`() async throws {
         let service = GestureService()
 
         let point = CGPoint(x: 500, y: 500)
 
         // Simulate long press with drag that doesn't move
         let startTime = Date()
-        try await service.drag(from: point, to: point, duration: 1000, steps: 1, modifiers: nil, profile: .linear)
+        try await service.drag(
+            DragOperationRequest(
+                from: point,
+                to: point,
+                duration: 1000,
+                steps: 1,
+                modifiers: nil,
+                profile: .linear))
         let elapsed = Date().timeIntervalSince(startTime)
 
         // Should hold for approximately 1 second
         #expect(elapsed >= 0.9)
     }
 
-    @Test("Complex gesture sequence")
-    func complexGestureSequence() async throws {
+    @Test
+    func `Complex gesture sequence`() async throws {
         let service = GestureService()
 
         // Simulate a complex interaction sequence
@@ -217,29 +226,31 @@ struct GestureServiceTests {
 
         // Drag to middle
         try await service.drag(
-            from: startPoint,
-            to: midPoint,
-            duration: 500,
-            steps: 20,
-            modifiers: nil,
-            profile: .linear)
+            DragOperationRequest(
+                from: startPoint,
+                to: midPoint,
+                duration: 500,
+                steps: 20,
+                modifiers: nil,
+                profile: .linear))
 
         // Continue drag to end
         try await service.drag(
-            from: midPoint,
-            to: endPoint,
-            duration: 500,
-            steps: 20,
-            modifiers: nil,
-            profile: .linear)
+            DragOperationRequest(
+                from: midPoint,
+                to: endPoint,
+                duration: 500,
+                steps: 20,
+                modifiers: nil,
+                profile: .linear))
 
         // Swipe back
         let swipeEnd = CGPoint(x: endPoint.x - 200, y: endPoint.y)
         try await service.swipe(from: endPoint, to: swipeEnd, duration: 200, steps: 10, profile: .linear)
     }
 
-    @Test("Hover gesture")
-    func hoverOverPoint() async throws {
+    @Test
+    func `Hover gesture`() async throws {
         let service = GestureService()
 
         let hoverPoint = CGPoint(x: 400, y: 400)

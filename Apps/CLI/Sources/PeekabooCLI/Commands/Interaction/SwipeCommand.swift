@@ -50,10 +50,21 @@ struct SwipeCommand: ErrorHandlingCommand, OutputFormattable, RuntimeOptionsConf
         return runtime
     }
 
-    private var services: any PeekabooServiceProviding { self.resolvedRuntime.services }
-    private var logger: Logger { self.resolvedRuntime.logger }
-    var outputLogger: Logger { self.logger }
-    var jsonOutput: Bool { self.runtime?.configuration.jsonOutput ?? self.runtimeOptions.jsonOutput }
+    private var services: any PeekabooServiceProviding {
+        self.resolvedRuntime.services
+    }
+
+    private var logger: Logger {
+        self.resolvedRuntime.logger
+    }
+
+    var outputLogger: Logger {
+        self.logger
+    }
+
+    var jsonOutput: Bool {
+        self.runtime?.configuration.jsonOutput ?? self.runtimeOptions.jsonOutput
+    }
 
     @MainActor
     mutating func run(using runtime: CommandRuntime) async throws {
@@ -139,23 +150,27 @@ struct SwipeCommand: ErrorHandlingCommand, OutputFormattable, RuntimeOptionsConf
                 rawValue: (self.profile ?? "linear").lowercased()
             ) ?? .linear
             let movement = CursorMovementResolver.resolve(
-                selection: profileSelection,
-                durationOverride: self.duration,
-                stepsOverride: self.steps,
-                baseSmooth: true,
-                distance: distance,
-                defaultDuration: 500,
-                defaultSteps: 20
+                CursorMovementResolutionRequest(
+                    selection: profileSelection,
+                    durationOverride: self.duration,
+                    stepsOverride: self.steps,
+                    baseSmooth: true,
+                    distance: distance,
+                    defaultDuration: 500,
+                    defaultSteps: 20
+                )
             )
 
             // Perform swipe using UIAutomationService
             try await AutomationServiceBridge.swipe(
                 automation: self.services.automation,
-                from: sourcePoint,
-                to: destPoint,
-                duration: movement.duration,
-                steps: movement.steps,
-                profile: movement.profile
+                request: SwipeRequest(
+                    from: sourcePoint,
+                    to: destPoint,
+                    duration: movement.duration,
+                    steps: movement.steps,
+                    profile: movement.profile
+                )
             )
             let snapshotLabel = snapshotIdForElements ?? "latest"
             AutomationEventLogger.log(

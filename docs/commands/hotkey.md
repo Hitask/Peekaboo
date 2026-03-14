@@ -28,20 +28,20 @@ read_when:
 ## Examples
 ```bash
 # Copy the current selection
-polter peekaboo -- hotkey "cmd,c"
+peekaboo hotkey "cmd,c"
 
 # Reopen the last closed tab in Safari
-polter peekaboo -- hotkey --keys "cmd,shift,t" --snapshot $(jq -r '.data.snapshot_id' /tmp/see.json)
+peekaboo hotkey --keys "cmd,shift,t" --snapshot $(jq -r '.data.snapshot_id' /tmp/see.json)
 
 # Trigger Spotlight without needing a snapshot
-polter peekaboo -- hotkey --keys "cmd space" --no-auto-focus
+peekaboo hotkey --keys "cmd space" --no-auto-focus
 
 # Tab backwards using Shift+Tab (positional, space-separated)
-polter peekaboo -- hotkey "shift tab"
+peekaboo hotkey "shift tab"
 ```
 
 ## Troubleshooting
 - Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
 - Confirm your target (app/window/selector) with `peekaboo list`/`peekaboo see` before rerunning.
 - If you see `SNAPSHOT_NOT_FOUND`, regenerate the snapshot with `peekaboo see` (or omit `--snapshot` to use the most recent one).
-- Re-run with `--json-output` or `--verbose` to surface detailed errors.
+- Re-run with `--json` or `--verbose` to surface detailed errors.

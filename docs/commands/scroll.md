@@ -30,16 +30,16 @@ read_when:
 ## Examples
 ```bash
 # Scroll down five ticks wherever the pointer currently sits
-polter peekaboo -- scroll --direction down --amount 5
+peekaboo scroll --direction down --amount 5
 
 # Scroll the element labeled "table_orders" using the latest snapshot
-polter peekaboo -- scroll --direction up --amount 2 --on table_orders
+peekaboo scroll --direction up --amount 2 --on table_orders
 
 # Smooth horizontal pan inside Keynote without switching Spaces
-polter peekaboo -- scroll --direction right --smooth --app Keynote --space-switch
+peekaboo scroll --direction right --smooth --app Keynote --space-switch
 ```
 
 ## Troubleshooting
 - Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
 - Confirm your target (app/window/selector) with `peekaboo list`/`peekaboo see` before rerunning.
-- Re-run with `--json-output` or `--verbose` to surface detailed errors.
+- Re-run with `--json` or `--verbose` to surface detailed errors.
